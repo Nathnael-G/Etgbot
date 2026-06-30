@@ -1,26 +1,26 @@
-import os
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, ContextTypes
+import os
 
+# ============================================================
+# 🔑 Read tokens from environment variables
+# ============================================================
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("No BOT_TOKEN found in environment variables!")
 
 WEB_APP_URL = os.environ.get("WEB_APP_URL", "https://glittery-sprite-3de50c.netlify.app/")
+
+# Get the Render URL from environment (Render sets this automatically)
+RENDER_URL = os.environ.get("RENDER_EXTERNAL_URL", "https://etgbot.onrender.com")
 # ============================================================
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    This function runs when a user sends the /start command.
-    It sends a welcome message with a button to open the Web App.
-    """
-    
+    """Send welcome message when /start is issued."""
     web_app_button = InlineKeyboardButton(
         "🚀 Open Web App", 
         web_app=WebAppInfo(url=WEB_APP_URL)
     )
-    
     reply_markup = InlineKeyboardMarkup([[web_app_button]])
     
     welcome_text = (
@@ -33,13 +33,10 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         "• And much more!"
     )
     
-    await update.message.reply_text(
-        welcome_text, 
-        reply_markup=reply_markup
-    )
+    await update.message.reply_text(welcome_text, reply_markup=reply_markup)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a helpful message when the user sends /help."""
+    """Send a help message when /help is issued."""
     help_text = (
         "🤖 Available Commands:\n"
         "/start - Welcome message with Web App link\n"
@@ -49,7 +46,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await update.message.reply_text(help_text)
 
 async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send an about message when the user sends /about."""
+    """Send an about message when /about is issued."""
     about_text = (
         "ℹ️ About This Bot\n\n"
         "This bot connects you to our innovative Web App. "
@@ -59,18 +56,28 @@ async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await update.message.reply_text(about_text)
 
 def main():
-    """
-    The main function that sets up and runs the bot.
-    """
-    print("🤖 Starting bot...")
+    """Start the bot using webhook."""
+    print("🤖 Starting bot with webhook...")
+    
+    # Create the Application
     app = Application.builder().token(BOT_TOKEN).build()
     
+    # Register command handlers
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("about", about_command))
     
-    print("✅ Bot is running! Press Ctrl+C to stop.")
-    app.run_polling()
+    # Set up webhook
+    webhook_url = f"{RENDER_URL}/webhook"
+    print(f"🔗 Setting webhook to: {webhook_url}")
+    
+    # Start the webhook
+    app.run_webhook(
+        listen="0.0.0.0",  # Listen on all interfaces
+        port=int(os.environ.get("PORT", 10000)),  # Use Render's port
+        url_path=BOT_TOKEN,  # Use token as path for security
+        webhook_url=webhook_url
+    )
 
 if __name__ == '__main__':
     main()
