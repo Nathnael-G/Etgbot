@@ -1,11 +1,13 @@
+import os
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-# ============================================================
-# 🔑 IMPORTANT: Replace these with your actual values!
-# ============================================================
-BOT_TOKEN = ""  # Paste your token from Step 1
-WEB_APP_URL = "https://glittery-sprite-3de50c.netlify.app/"  # Your Web App link from Step 2
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise ValueError("No BOT_TOKEN found in environment variables!")
+
+WEB_APP_URL = os.environ.get("WEB_APP_URL", "https://glittery-sprite-3de50c.netlify.app/")
 # ============================================================
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -14,16 +16,13 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     It sends a welcome message with a button to open the Web App.
     """
     
-    # 1. Create a button that opens your Web App
     web_app_button = InlineKeyboardButton(
         "🚀 Open Web App", 
         web_app=WebAppInfo(url=WEB_APP_URL)
     )
     
-    # 2. Wrap the button in a keyboard markup
     reply_markup = InlineKeyboardMarkup([[web_app_button]])
     
-    # 3. Create the welcome message
     welcome_text = (
         "👋 Welcome to Our Bot!\n\n"
         "We're excited to have you here. "
@@ -34,7 +33,6 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         "• And much more!"
     )
     
-    # 4. Send the message with the button
     await update.message.reply_text(
         welcome_text, 
         reply_markup=reply_markup
@@ -64,16 +62,13 @@ def main():
     """
     The main function that sets up and runs the bot.
     """
-    # 1. Create the Application using your bot token
     print("🤖 Starting bot...")
     app = Application.builder().token(BOT_TOKEN).build()
     
-    # 2. Register command handlers
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("about", about_command))
     
-    # 3. Start the bot
     print("✅ Bot is running! Press Ctrl+C to stop.")
     app.run_polling()
 
